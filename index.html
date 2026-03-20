@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Stop. You're here.</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300;1,9..144,700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'DM Sans', sans-serif; background: #0E0D0B; color: #F0EDE6; touch-action: manipulation; }
+
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 2rem; opacity: 0; pointer-events: none; transition: opacity 0.6s ease; text-align: center;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+.screen.scroll { justify-content: flex-start; overflow-y: auto; padding: 3rem 2rem 6rem; -webkit-overflow-scrolling: touch; }
+
+/* ── S0 ── */
+#s0 { cursor: pointer; }
+.interrupt-word { font-family: 'Fraunces', serif; font-size: clamp(5rem, 22vw, 9rem); font-weight: 700; line-height: 0.9; color: #F0EDE6; letter-spacing: -0.02em; opacity: 0; transform: scale(0.94); }
+.interrupt-word.show { opacity: 1; transform: scale(1); transition: opacity 0.4s ease, transform 0.4s ease; }
+.interrupt-sub { font-size: clamp(0.9rem, 3vw, 1.1rem); color: #8A8278; margin-top: 1.5rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; opacity: 0; transition: opacity 0.5s ease 0.8s; }
+.interrupt-sub.show { opacity: 1; }
+.tap-hint { position: absolute; bottom: 2.5rem; font-size: 12px; color: #4A4740; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; transition: opacity 0.5s ease 1.4s; }
+.tap-hint.show { opacity: 1; }
+
+/* ── S1 ── */
+.ground-q { font-family: 'Fraunces', serif; font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 300; font-style: italic; line-height: 1.3; color: #F0EDE6; max-width: 520px; margin-bottom: 2.5rem; opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.ground-q.show { opacity: 1; transform: translateY(0); }
+.sense-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 400px; width: 100%; margin-bottom: 2rem; opacity: 0; transition: opacity 0.5s ease 0.3s; }
+.sense-grid.show { opacity: 1; }
+.sense-btn { aspect-ratio: 1; border-radius: 50%; border: 1.5px solid #2A2823; background: transparent; color: #8A8278; font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2; }
+.sense-btn .sense-n { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; color: #F0EDE6; line-height: 1; }
+.sense-btn.done { border-color: #8B7355; background: #1A1814; color: #C4A882; }
+.sense-btn.done .sense-n { color: #C4A882; }
+.ground-cta { font-size: 13px; color: #4A4740; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transition: opacity 0.5s ease 0.5s; }
+.ground-cta.show { opacity: 1; }
+.ground-next { position: absolute; bottom: 2.5rem; padding: 12px 32px; border-radius: 40px; border: 1.5px solid #2A2823; background: transparent; color: #4A4740; font-size: 13px; font-family: 'DM Sans', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; opacity: 0; }
+.ground-next.visible { opacity: 1; border-color: #8B7355; color: #C4A882; }
+
+/* ── S2 ── */
+#s2 { cursor: pointer; }
+.truth-lines { max-width: 540px; opacity: 0; transform: translateY(8px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.truth-lines.show { opacity: 1; transform: translateY(0); }
+.truth-line { font-family: 'Fraunces', serif; font-size: clamp(1.1rem, 3.5vw, 1.5rem); font-weight: 300; color: #8A8278; line-height: 1.5; margin-bottom: 0.2rem; opacity: 0; transition: opacity 0.4s ease, color 0.4s ease; }
+.truth-line.lit { opacity: 1; color: #F0EDE6; }
+.truth-line.lit em { font-style: italic; color: #C4A882; }
+.truth-line-gap { margin-bottom: 1.2rem; }
+
+/* ── S3 ── */
+.defuse-prompt { font-family: 'Fraunces', serif; font-size: clamp(1rem, 3.5vw, 1.35rem); font-weight: 300; font-style: italic; color: #8A8278; margin-bottom: 2rem; max-width: 480px; opacity: 0; transition: opacity 0.5s ease; }
+.defuse-prompt.show { opacity: 1; }
+.defuse-cards { width: 100%; max-width: 520px; opacity: 0; transition: opacity 0.5s ease 0.3s; }
+.defuse-cards.show { opacity: 1; }
+.dcard { border: 1px solid #2A2823; border-radius: 14px; padding: 16px 20px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s ease; text-align: left; }
+.dcard:hover { border-color: #8B7355; background: #141310; }
+.dcard.used { border-color: #3D3520; background: #141310; }
+.dcard-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #8B7355; margin-bottom: 6px; }
+.dcard-text { font-family: 'Fraunces', serif; font-size: clamp(0.95rem, 2.5vw, 1.1rem); font-style: italic; color: #F0EDE6; line-height: 1.5; font-weight: 300; }
+.dcard.used .dcard-text { color: #5A5650; }
+
+/* ── S4 ── */
+.breath-title { font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #4A4740; margin-bottom: 2.5rem; opacity: 0; transition: opacity 0.5s ease; }
+.breath-title.show { opacity: 1; }
+.breath-circle-wrap { position: relative; width: min(260px, 60vw); height: min(260px, 60vw); margin-bottom: 2rem; opacity: 0; transition: opacity 0.5s ease 0.2s; }
+.breath-circle-wrap.show { opacity: 1; }
+.breath-svg { width: 100%; height: 100%; }
+.breath-ring { fill: none; stroke: #2A2823; stroke-width: 1.5; }
+.breath-progress { fill: none; stroke: #8B7355; stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 0 1000; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dasharray 0.1s linear; }
+.breath-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.breath-word { font-family: 'Fraunces', serif; font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 300; font-style: italic; color: #F0EDE6; }
+.breath-count { font-size: 12px; color: #4A4740; letter-spacing: 0.1em; text-transform: uppercase; }
+.breath-note { font-size: 13px; color: #4A4740; max-width: 300px; line-height: 1.6; opacity: 0; transition: opacity 0.5s ease 0.4s; }
+.breath-note.show { opacity: 1; }
+.breath-skip { position: absolute; bottom: 2.5rem; font-size: 12px; color: #2A2823; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: none; background: transparent; font-family: 'DM Sans', sans-serif; transition: color 0.2s; }
+.breath-skip:hover { color: #4A4740; }
+
+/* ── SHARED (S5-S7) ── */
+.page-header { text-align: center; margin-bottom: 2rem; width: 100%; max-width: 520px; opacity: 0; transition: opacity 0.5s ease; }
+.page-header.show { opacity: 1; }
+.page-header h2 { font-family: 'Fraunces', serif; font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 300; font-style: italic; color: #F0EDE6; margin-bottom: 6px; }
+.page-header p { font-size: 13px; color: #4A4740; letter-spacing: 0.06em; text-transform: uppercase; }
+.page-wrap { width: 100%; max-width: 520px; opacity: 0; transition: opacity 0.5s ease 0.3s; }
+.page-wrap.show { opacity: 1; }
+
+.section-strip { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; margin-top: 2rem; }
+.section-strip:first-child { margin-top: 0; }
+.section-strip span { font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #4A4740; white-space: nowrap; }
+.section-strip::after { content: ''; flex: 1; height: 1px; background: #1E1C18; }
+
+/* bottom nav */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #0E0D0B; border-top: 1px solid #1E1C18; z-index: 300; padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav.hidden { display: none; }
+.bnav-btn { flex: 1; padding: 12px 6px 10px; font-size: 10px; font-family: 'DM Sans', sans-serif; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #3A3830; cursor: pointer; border: none; background: transparent; transition: color 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bnav-btn.active { color: #8B7355; }
+.bnav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ACT tools */
+.general-urge { border: 1px solid #3D3520; border-radius: 14px; padding: 20px; margin-bottom: 12px; background: #141310; }
+.gu-label { font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #8B7355; margin-bottom: 14px; }
+.gu-step { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid #1E1C18; }
+.gu-step:last-of-type { border: none; padding-bottom: 0; }
+.gu-n { font-family: 'Fraunces', serif; font-size: 1.3rem; color: #3D3520; width: 22px; flex-shrink: 0; line-height: 1.3; font-weight: 700; }
+.gu-content { flex: 1; }
+.gu-badge { display: inline-block; font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; background: #1E1C18; color: #8B7355; padding: 2px 8px; border-radius: 8px; margin-bottom: 5px; }
+.gu-t { font-size: 14px; font-weight: 500; color: #F0EDE6; margin-bottom: 3px; line-height: 1.3; }
+.gu-d { font-size: 13px; color: #5A5650; line-height: 1.55; }
+.gu-q { font-size: 13px; font-style: italic; color: #8B7355; background: #0E0D0B; border-left: 2px solid #3D3520; padding: 8px 12px; border-radius: 0 8px 8px 0; margin-top: 8px; line-height: 1.55; }
+.timer-mini { display: flex; align-items: center; gap: 12px; background: #0E0D0B; border-radius: 10px; padding: 12px 16px; margin-top: 10px; }
+.timer-mini-num { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 700; color: #F0EDE6; min-width: 70px; }
+.timer-mini-label { font-size: 12px; color: #4A4740; flex: 1; line-height: 1.4; }
+.timer-mini-btn { padding: 7px 16px; border-radius: 20px; border: 1px solid #3D3520; background: transparent; color: #8B7355; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.timer-mini-btn:hover { background: #1A1814; border-color: #8B7355; }
+.phases-toggle { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #2A2823; border-radius: 14px; background: transparent; cursor: pointer; transition: all 0.2s; margin-bottom: 8px; font-family: 'DM Sans', sans-serif; text-align: left; }
+.phases-toggle:hover { border-color: #3D3520; }
+.phases-toggle.open { border-color: #3D3520; }
+.pt-icon { font-family: 'Fraunces', serif; font-size: 1.2rem; color: #4A4740; flex-shrink: 0; line-height: 1; }
+.pt-text { flex: 1; }
+.pt-title { font-size: 13px; color: #8A8278; font-weight: 500; display: block; }
+.pt-sub { font-size: 11px; color: #3A3830; margin-top: 2px; letter-spacing: 0.04em; display: block; }
+.pt-arrow { font-size: 14px; color: #3A3830; transition: transform 0.25s; flex-shrink: 0; }
+.phases-toggle.open .pt-arrow { transform: rotate(180deg); }
+.phases-container { display: none; margin-bottom: 12px; }
+.phases-container.open { display: block; }
+.tool-phase { border: 1px solid #2A2823; border-radius: 14px; overflow: hidden; margin-bottom: 8px; }
+.tp-header { display: flex; align-items: center; gap: 12px; padding: 13px 18px; cursor: pointer; background: transparent; transition: background 0.2s; width: 100%; font-family: 'DM Sans', sans-serif; border: none; }
+.tp-header:hover { background: #141310; }
+.tp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tp-title { font-size: 14px; font-weight: 500; color: #F0EDE6; flex: 1; text-align: left; }
+.tp-sub { font-size: 11px; color: #4A4740; letter-spacing: 0.04em; white-space: nowrap; }
+.tp-chev { font-size: 16px; color: #4A4740; transition: transform 0.25s; }
+.tool-phase.open .tp-chev { transform: rotate(180deg); }
+.tp-body { display: none; padding: 0 18px 16px; border-top: 1px solid #1A1814; }
+.tool-phase.open .tp-body { display: block; }
+.tp-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #1A1814; }
+.tp-step:last-child { border: none; padding-bottom: 0; }
+.tp-n { font-family: 'Fraunces', serif; font-size: 1.2rem; color: #2A2823; width: 20px; flex-shrink: 0; line-height: 1.3; font-weight: 700; }
+.tp-content { flex: 1; }
+.tp-badge { display: inline-block; font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; background: #1A1814; color: #8B7355; padding: 2px 8px; border-radius: 8px; margin-bottom: 4px; }
+.tp-t { font-size: 14px; font-weight: 500; color: #F0EDE6; margin-bottom: 3px; line-height: 1.3; }
+.tp-d { font-size: 13px; color: #5A5650; line-height: 1.55; }
+.tp-q { font-size: 13px; font-style: italic; color: #8B7355; background: #141310; border-left: 2px solid #3D3520; padding: 8px 12px; border-radius: 0 8px 8px 0; margin-top: 8px; line-height: 1.55; }
+.therapist-strip { border: 1px solid #2A2823; border-radius: 14px; padding: 18px 20px; margin-top: 4px; text-align: left; }
+.ts-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #8B7355; margin-bottom: 8px; }
+.ts-quote { font-family: 'Fraunces', serif; font-size: clamp(0.9rem, 2.5vw, 1.05rem); font-style: italic; font-weight: 300; color: #F0EDE6; line-height: 1.6; }
+
+/* ── DISTRACT ── */
+.distract-intro { font-family: 'Fraunces', serif; font-size: clamp(0.95rem, 2.8vw, 1.1rem); font-weight: 300; font-style: italic; color: #5A5650; line-height: 1.65; margin-bottom: 16px; }
+.distract-card { border: 1px solid #2A2823; border-radius: 14px; padding: 18px 20px; margin-bottom: 4px; cursor: pointer; transition: all 0.2s; text-align: left; display: flex; align-items: flex-start; gap: 16px; }
+.distract-card:hover { border-color: #8B7355; background: #141310; }
+.distract-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #1A1814; margin-top: 1px; }
+.distract-icon svg { width: 18px; height: 18px; stroke: #8B7355; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.distract-body { flex: 1; }
+.distract-title { font-size: 14px; font-weight: 500; color: #F0EDE6; margin-bottom: 3px; }
+.distract-desc { font-size: 13px; color: #5A5650; line-height: 1.5; }
+.distract-action { font-size: 11px; color: #8B7355; margin-top: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+.distract-expanded { display: none; border: 1px solid #3D3520; border-top: none; border-radius: 0 0 14px 14px; padding: 14px 18px; margin-bottom: 10px; background: #141310; }
+.distract-expanded.open { display: block; }
+.distract-expanded p { font-size: 13px; color: #8A8278; line-height: 1.65; margin-bottom: 8px; }
+.distract-expanded p:last-child { margin-bottom: 0; }
+.distract-expanded strong { color: #C4A882; font-weight: 500; }
+.distract-note { border: 1px solid #1E1C18; border-radius: 14px; padding: 16px 18px; margin-top: 8px; }
+.distract-note p { font-family: 'Fraunces', serif; font-size: clamp(0.9rem, 2.5vw, 1rem); font-style: italic; font-weight: 300; color: #5A5650; line-height: 1.65; }
+
+/* ── TOOLKIT ── */
+.phrase-card { border: 1px solid #2A2823; border-radius: 14px; padding: 16px 20px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; text-align: left; position: relative; overflow: hidden; }
+.phrase-card:hover { border-color: #8B7355; background: #141310; }
+.phrase-card:active { transform: scale(0.99); }
+.phrase-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #8B7355; margin-bottom: 6px; }
+.phrase-text { font-family: 'Fraunces', serif; font-size: clamp(0.95rem, 2.5vw, 1.05rem); font-style: italic; color: #F0EDE6; line-height: 1.55; font-weight: 300; }
+.phrase-copied { position: absolute; top: 12px; right: 14px; font-size: 11px; color: #6B8F71; opacity: 0; transition: opacity 0.3s; letter-spacing: 0.04em; }
+.phrase-copied.show { opacity: 1; }
+
+.feeling-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.feeling-btn { padding: 13px 12px; border-radius: 12px; border: 1px solid #2A2823; background: transparent; color: #8A8278; font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; transition: all 0.2s; line-height: 1.3; }
+.feeling-btn:hover { border-color: #8B7355; color: #F0EDE6; background: #141310; }
+.feeling-btn.active { background: #141310; border-color: #8B7355; color: #F0EDE6; }
+.feeling-response { border: 1px solid #3D3520; border-radius: 14px; padding: 16px 18px; background: #141310; display: none; margin-bottom: 16px; animation: fadeUp 0.3s ease; }
+.feeling-response.show { display: block; }
+.feeling-response-title { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #8B7355; margin-bottom: 8px; }
+.feeling-response-body { font-size: 14px; color: #8A8278; line-height: 1.7; }
+.feeling-response-body em { font-style: italic; color: #C4A882; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* who do I want to be */
+.identity-block { background: #141310; border: 1px solid #3D3520; border-radius: 14px; padding: 20px; margin-bottom: 10px; }
+.identity-q { font-family: 'Fraunces', serif; font-size: clamp(1.2rem, 3.5vw, 1.5rem); font-weight: 300; font-style: italic; color: #F0EDE6; line-height: 1.4; margin-bottom: 16px; text-align: center; }
+.identity-q em { color: #C4A882; }
+.identity-trait { display: flex; align-items: flex-start; gap: 14px; padding: 10px 0; border-bottom: 1px solid #1E1C18; }
+.identity-trait:last-of-type { border: none; padding-bottom: 0; }
+.identity-icon { width: 28px; height: 28px; border-radius: 50%; background: #1E1C18; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.identity-icon svg { width: 13px; height: 13px; stroke: #8B7355; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.identity-content { flex: 1; }
+.identity-title { font-size: 14px; font-weight: 500; color: #F0EDE6; margin-bottom: 3px; }
+.identity-desc { font-size: 13px; color: #5A5650; line-height: 1.55; }
+.identity-contrast { margin-top: 16px; background: #0E0D0B; border-radius: 10px; padding: 14px 16px; }
+.ic-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; padding: 6px 0; }
+.ic-from { font-size: 13px; color: #3A3830; text-align: right; line-height: 1.4; font-style: italic; }
+.ic-arrow { color: #3D3520; font-size: 14px; text-align: center; }
+.ic-to { font-size: 13px; color: #8A8278; text-align: left; line-height: 1.4; }
+.ic-divider { border: none; border-top: 1px solid #1E1C18; margin: 4px 0; }
+
+.value-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #141310; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; }
+.value-item:hover { border-color: #3D3520; }
+.value-item.selected { border-color: #8B7355; background: #1A1814; }
+.value-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #2A2823; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: transparent; transition: all 0.15s; }
+.value-item.selected .value-check { background: #8B7355; border-color: #8B7355; color: #F0EDE6; }
+.value-text { font-size: 14px; color: #5A5650; line-height: 1.4; flex: 1; transition: color 0.15s; }
+.value-item.selected .value-text { color: #F0EDE6; }
+.values-anchor { background: #0E0D0B; border-radius: 12px; padding: 16px; margin-top: 10px; border: 1px solid #1E1C18; }
+.values-anchor p { font-family: 'Fraunces', serif; font-size: clamp(0.9rem, 2.5vw, 1.05rem); font-style: italic; font-weight: 300; color: #8A8278; line-height: 1.65; }
+.values-anchor p em { color: #C4A882; }
+
+/* progress dots */
+.progress-dots { position: fixed; bottom: calc(50px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; gap: 7px; z-index: 200; pointer-events: none; transition: opacity 0.3s; }
+.progress-dots.hidden { opacity: 0; }
+.pdot { width: 5px; height: 5px; border-radius: 50%; background: #2A2823; transition: all 0.3s ease; }
+.pdot.active { background: #8B7355; transform: scale(1.3); }
+</style>
+</head>
+<body>
+
+<div class="progress-dots" id="pdots">
+  <div class="pdot active"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div>
+</div>
+
+<div class="bottom-nav hidden" id="bnav">
+  <button class="bnav-btn active" id="bn-act" onclick="switchTab(5)">
+    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    ACT tools
+  </button>
+  <button class="bnav-btn" id="bn-dist" onclick="switchTab(6)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    Distract
+  </button>
+  <button class="bnav-btn" id="bn-kit" onclick="switchTab(7)">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Toolkit
+  </button>
+</div>
+
+<!-- S0 -->
+<div class="screen active" id="s0" onclick="goTo(1)">
+  <div class="interrupt-word" id="iword">Stop.</div>
+  <div class="interrupt-sub" id="isub">You opened this. That means part of you is already here.</div>
+  <div class="tap-hint" id="itap">Tap to continue</div>
+</div>
+
+<!-- S1 -->
+<div class="screen" id="s1">
+  <div class="ground-q" id="gq">Where are you right now?<br>Name five things you can see.</div>
+  <div class="sense-grid" id="sgrid">
+    <button class="sense-btn" onclick="senseDone(this)"><span class="sense-n">5</span><span>see</span></button>
+    <button class="sense-btn" onclick="senseDone(this)"><span class="sense-n">4</span><span>feel</span></button>
+    <button class="sense-btn" onclick="senseDone(this)"><span class="sense-n">3</span><span>hear</span></button>
+    <button class="sense-btn" onclick="senseDone(this)"><span class="sense-n">2</span><span>smell</span></button>
+    <button class="sense-btn" onclick="senseDone(this)"><span class="sense-n">1</span><span>breath</span></button>
+  </div>
+  <div class="ground-cta" id="gcta">Tap each sense as you do it</div>
+  <button class="ground-next" id="gnext" onclick="goTo(2)">I'm present — continue</button>
+</div>
+
+<!-- S2 -->
+<div class="screen" id="s2" onclick="nextTruth()">
+  <div class="truth-lines" id="tlines">
+    <div class="truth-line" id="t1">This is the autopilot.</div>
+    <div class="truth-line" id="t2">You know this pattern.</div>
+    <div class="truth-line truth-line-gap" id="t3">You are not inside it.</div>
+    <div class="truth-line" id="t4">You are the one <em>watching</em> it.</div>
+    <div class="truth-line truth-line-gap" id="t5">The urge is present.</div>
+    <div class="truth-line" id="t6">It is not a command.</div>
+    <div class="truth-line" id="t7">It will <em>pass.</em></div>
+  </div>
+</div>
+
+<!-- S3 -->
+<div class="screen" id="s3">
+  <div class="defuse-prompt" id="dprompt">Say one of these — out loud if you can.</div>
+  <div class="defuse-cards" id="dcards">
+    <div class="dcard" onclick="usePhrase(this)"><div class="dcard-label">Defusion</div><div class="dcard-text">"I'm having the thought that I need to eat more. That is a thought. Not a fact."</div></div>
+    <div class="dcard" onclick="usePhrase(this)"><div class="dcard-label">Name the pattern</div><div class="dcard-text">"There's the second wave. I know this one. My brain does this. It is not who I am."</div></div>
+    <div class="dcard" onclick="usePhrase(this)"><div class="dcard-label">Values</div><div class="dcard-text">"What would the version of me who is kind to herself do right now?"</div></div>
+    <div class="dcard" onclick="usePhrase(this)"><div class="dcard-label">Self-compassion</div><div class="dcard-text">"This is hard. I am doing something hard. I am allowed to stop."</div></div>
+  </div>
+</div>
+
+<!-- S4 -->
+<div class="screen" id="s4">
+  <div class="breath-title" id="btitle">One breath before the tools</div>
+  <div class="breath-circle-wrap" id="bcircle">
+    <svg class="breath-svg" viewBox="0 0 200 200">
+      <circle class="breath-ring" cx="100" cy="100" r="88"/>
+      <circle class="breath-progress" id="bprog" cx="100" cy="100" r="88"/>
+    </svg>
+    <div class="breath-inner">
+      <div class="breath-word" id="bword">In</div>
+      <div class="breath-count" id="bcount">4</div>
+    </div>
+  </div>
+  <div class="breath-note" id="bnote">In for 4 · Hold for 2 · Out for 6</div>
+  <button class="breath-skip" onclick="switchTab(5)">Skip →</button>
+</div>
+
+<!-- S5: ACT TOOLS -->
+<div class="screen scroll" id="s5">
+  <div class="page-header" id="ph5"><h2>You're here. Now use this.</h2><p>Everything you need, right now</p></div>
+  <div class="page-wrap" id="pw5">
+    <div class="general-urge">
+      <div class="gu-label">Right now · Use this for any urge</div>
+      <div class="gu-step"><div class="gu-n">1</div><div class="gu-content"><div class="gu-badge">Defusion</div><div class="gu-t">Name it — don't fight it</div><div class="gu-d">"I notice there is an urge present. It is here. I am watching it. I do not have to act on it."</div></div></div>
+      <div class="gu-step"><div class="gu-n">2</div><div class="gu-content"><div class="gu-badge">Committed action</div><div class="gu-t">Leave the kitchen — now</div><div class="gu-d">Distance is the intervention. Take your drink and go somewhere else. You don't need to understand the urge to move away from it.</div></div></div>
+      <div class="gu-step"><div class="gu-n">3</div><div class="gu-content"><div class="gu-badge">Acceptance · Urge surfing</div><div class="gu-t">Sit with it — start the timer</div><div class="gu-d">Urges peak at around 20 minutes then break. You are not waiting forever. You are just waiting for the wave to pass.</div>
+        <div class="timer-mini"><div class="timer-mini-num" id="tm-display">20:00</div><div class="timer-mini-label">The wave will break. You are just watching.</div><button class="timer-mini-btn" id="tm-btn" onclick="toggleMiniTimer()">Start</button></div>
+      </div></div>
+      <div class="gu-step"><div class="gu-n">4</div><div class="gu-content"><div class="gu-badge">Connection</div><div class="gu-t">Call someone</div><div class="gu-d">You don't need a reason. A real voice is what your nervous system is actually asking for. This is what worked before.</div></div></div>
+      <div class="gu-step"><div class="gu-n">5</div><div class="gu-content"><div class="gu-badge">Self-compassion</div><div class="gu-t">Be kind right now</div><div class="gu-q">"I am doing something hard. I am allowed to stop. This feeling does not decide what happens next — I do."</div></div></div>
+    </div>
+
+    <button class="phases-toggle" id="ptoggle" onclick="togglePhases()">
+      <span class="pt-icon">+</span>
+      <span class="pt-text"><span class="pt-title">Want something more specific?</span><span class="pt-sub">Second wave · Autopilot · Mid-binge · After</span></span>
+      <span class="pt-arrow">›</span>
+    </button>
+    <div class="phases-container" id="pcontainer">
+      <div class="tool-phase">
+        <button class="tp-header" onclick="togglePhase(this)"><div class="tp-dot" style="background:#6B8F71;"></div><span class="tp-title">The second wave just arrived</span><span class="tp-sub">After a meal</span><span class="tp-chev">›</span></button>
+        <div class="tp-body">
+          <div class="tp-step"><div class="tp-n">1</div><div class="tp-content"><div class="tp-badge">Defusion</div><div class="tp-t">Name it</div><div class="tp-d">"My mind is telling me I need more. I just ate. This is the second wave — I know this pattern."</div></div></div>
+          <div class="tp-step"><div class="tp-n">2</div><div class="tp-content"><div class="tp-badge">Committed action</div><div class="tp-t">Leave the kitchen now</div><div class="tp-d">Not in a minute. Take your drink and go. Distance from the food is your most important tool right now.</div></div></div>
+          <div class="tp-step"><div class="tp-n">3</div><div class="tp-content"><div class="tp-badge">Acceptance</div><div class="tp-t">Start the timer — watch the wave</div><div class="tp-d">Sit somewhere comfortable. Let the urge be present. You are not fighting it. You are waiting for it to break.</div></div></div>
+          <div class="tp-step"><div class="tp-n">4</div><div class="tp-content"><div class="tp-badge">Connection</div><div class="tp-t">Call someone right now</div><div class="tp-d">This is your most powerful tool. You know it works.</div></div></div>
+        </div>
+      </div>
+      <div class="tool-phase">
+        <button class="tp-header" onclick="togglePhase(this)"><div class="tp-dot" style="background:#C4843A;"></div><span class="tp-title">The switch has flipped</span><span class="tp-sub">Autopilot</span><span class="tp-chev">›</span></button>
+        <div class="tp-body">
+          <div class="tp-step"><div class="tp-n">1</div><div class="tp-content"><div class="tp-badge">Defusion</div><div class="tp-t">Say "autopilot" out loud</div><div class="tp-d">Naming the state interrupts it. Your observing mind and your autopilot cannot run at the same time.</div></div></div>
+          <div class="tp-step"><div class="tp-n">2</div><div class="tp-content"><div class="tp-badge">Present moment</div><div class="tp-t">Stop. Feel your feet on the floor.</div><div class="tp-d">Both feet. Feel the ground. One slow breath — in for 4, out for 6. You are here. You are not the pattern.</div></div></div>
+          <div class="tp-step"><div class="tp-n">3</div><div class="tp-content"><div class="tp-badge">Defusion</div><div class="tp-t">Separate yourself from it</div><div class="tp-q">"This is something my brain does. It is not who I am. I am the one noticing it."</div></div></div>
+          <div class="tp-step"><div class="tp-n">4</div><div class="tp-content"><div class="tp-badge">Values</div><div class="tp-t">Ask the one question</div><div class="tp-q">"What would the version of me who is kind to herself do right now?"</div></div></div>
+        </div>
+      </div>
+      <div class="tool-phase">
+        <button class="tp-header" onclick="togglePhase(this)"><div class="tp-dot" style="background:#B5615A;"></div><span class="tp-title">I'm already in it</span><span class="tp-sub">Mid-binge</span><span class="tp-chev">›</span></button>
+        <div class="tp-body">
+          <div class="tp-step"><div class="tp-n">1</div><div class="tp-content"><div class="tp-badge">Defusion</div><div class="tp-t">Stop. Say this.</div><div class="tp-q">"I notice I am in the middle of a binge. This is a pattern. It is not a verdict on who I am."</div></div></div>
+          <div class="tp-step"><div class="tp-n">2</div><div class="tp-content"><div class="tp-badge">Present moment</div><div class="tp-t">Run cold water over your wrists</div><div class="tp-d">Go to the bathroom. Cold water on your wrists. Feel it. This brings you back into your body and out of the dissociated autopilot state.</div></div></div>
+          <div class="tp-step"><div class="tp-n">3</div><div class="tp-content"><div class="tp-badge">Self-compassion</div><div class="tp-t">Hand on chest. Say this.</div><div class="tp-q">"This is hard. I am doing something hard. I am allowed to stop now."</div></div></div>
+          <div class="tp-step"><div class="tp-n">4</div><div class="tp-content"><div class="tp-badge">Committed action</div><div class="tp-t">Stopping now is the win</div><div class="tp-d">Leave the food. Walk away. Stopping in the middle is the intervention. It counts.</div></div></div>
+        </div>
+      </div>
+      <div class="tool-phase">
+        <button class="tp-header" onclick="togglePhase(this)"><div class="tp-dot" style="background:#5A6B9E;"></div><span class="tp-title">It happened — guilt is here</span><span class="tp-sub">After</span><span class="tp-chev">›</span></button>
+        <div class="tp-body">
+          <div class="tp-step"><div class="tp-n">1</div><div class="tp-content"><div class="tp-badge">Defusion</div><div class="tp-t">The guilt is a thought. Not a verdict.</div><div class="tp-q">"I am having the thought that I am a failure. That is a thought. It is not a fact."</div></div></div>
+          <div class="tp-step"><div class="tp-n">2</div><div class="tp-content"><div class="tp-badge">Self-compassion</div><div class="tp-t">What would you say to someone you love?</div><div class="tp-d">If a close friend told you this happened to them — what would you say? Say exactly that to yourself.</div></div></div>
+          <div class="tp-step"><div class="tp-n">3</div><div class="tp-content"><div class="tp-badge">Values</div><div class="tp-t">Do not purge. Do not restrict tomorrow.</div><div class="tp-d">You have been free from purging for four years. One episode does not change that. Restricting tomorrow causes the next binge. Tomorrow: same meals, same rhythm, no punishment.</div></div></div>
+          <div class="tp-step"><div class="tp-n">4</div><div class="tp-content"><div class="tp-badge">Present moment</div><div class="tp-t">This moment is new.</div><div class="tp-q">"That happened. It is over. What I do now is what matters."</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="therapist-strip">
+      <div class="ts-label">For your therapist — one sentence</div>
+      <div class="ts-quote">"I've been struggling with binge eating and I've never brought it up. Can we look at it through ACT?"</div>
+    </div>
+  </div>
+</div>
+
+<!-- S6: DISTRACT -->
+<div class="screen scroll" id="s6">
+  <div class="page-header" id="ph6"><h2>Break the state.</h2><p>Pick one. Do it now. Don't think about it.</p></div>
+  <div class="page-wrap" id="pw6">
+
+    <p class="distract-intro">The urge lives in a particular mental state. You don't fight it — you move into a different state. Any of these work. The only rule is: pick one immediately and do it.</p>
+
+    <div class="distract-card" onclick="toggleDistract('d-call', this)">
+      <div class="distract-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.88 9.18 19.79 19.79 0 01.82 0.56 2 2 0 012.82.4h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L6.91 8.34a16 16 0 006.29 6.29l1.5-1.5a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+      <div class="distract-body">
+        <div class="distract-title">Call or text someone</div>
+        <div class="distract-desc">Connection is what your nervous system is actually asking for. You don't need a reason to call.</div>
+        <div class="distract-action">Most powerful option ↓</div>
+      </div>
+    </div>
+    <div class="distract-expanded" id="d-call">
+      <p>Pick up your phone and call — not text if you can. A real voice works faster than anything else. You've already proven this: it's what stopped the binge-purge cycle before. That's not a coincidence.</p>
+      <p><strong>If you can't call right now:</strong> Send a voice note, or text "can I call you?" The act of reaching out interrupts the isolated state the urge needs to grow in.</p>
+    </div>
+
+    <div class="distract-card" onclick="toggleDistract('d-outside', this)">
+      <div class="distract-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="distract-body">
+        <div class="distract-title">Go outside — even for two minutes</div>
+        <div class="distract-desc">Leave the building. Change your physical environment completely.</div>
+        <div class="distract-action">Environment shift ↓</div>
+      </div>
+    </div>
+    <div class="distract-expanded" id="d-outside">
+      <p>Put on shoes and walk out the front door. No destination needed. You just need to not be in the same physical space where the urge started.</p>
+      <p><strong>Cold air, different sounds, the sky</strong> — all interrupt the sensory loop the urge runs on. Even standing on your doorstep for two minutes changes the state enough to let the wave begin to pass.</p>
+    </div>
+
+    <div class="distract-card" onclick="toggleDistract('d-move', this)">
+      <div class="distract-icon"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+      <div class="distract-body">
+        <div class="distract-title">Move your body</div>
+        <div class="distract-desc">Walk around, stretch, shake out your hands. Gets you out of your head and back into your body.</div>
+        <div class="distract-action">Physical state change ↓</div>
+      </div>
+    </div>
+    <div class="distract-expanded" id="d-move">
+      <p>You don't need to exercise. Walk from room to room. Stretch on the floor. Roll your shoulders. Shake your hands out. Any movement that brings you back into your physical body rather than your head.</p>
+      <p><strong>Even better:</strong> Put music on and let yourself move to one song. You cannot be fully in an autopilot binge state and fully present in your body at the same time — they compete.</p>
+    </div>
+
+    <div class="distract-card" onclick="toggleDistract('d-music', this)">
+      <div class="distract-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+      <div class="distract-body">
+        <div class="distract-title">Put a specific playlist on</div>
+        <div class="distract-desc">Not shuffle. A playlist you know and love. Music that means something to you.</div>
+        <div class="distract-action">Mood shift ↓</div>
+      </div>
+    </div>
+    <div class="distract-expanded" id="d-music">
+      <p>The urge runs on a particular internal mood. Music you love shifts that mood neurologically — not just distraction, but a genuine state change.</p>
+      <p><strong>Have the playlist ready before you need it.</strong> One you associate with feeling good, or calm, or like yourself. Press play without thinking about it. The thinking is where the urge lives.</p>
+    </div>
+
+    <div class="distract-note">
+      <p>You don't have to feel like doing any of these. You just have to do one. The feeling follows the action — it never goes the other way around when you're in this state.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- S7: TOOLKIT -->
+<div class="screen scroll" id="s7">
+  <div class="page-header" id="ph7"><h2>Your deeper toolkit.</h2><p>Phrases · Feelings · Who you want to be</p></div>
+  <div class="page-wrap" id="pw7">
+
+    <!-- Phrases -->
+    <div class="section-strip"><span>Things to say to yourself</span></div>
+    <p style="font-size:13px; color:#4A4740; line-height:1.6; margin-bottom:12px;">Tap any phrase to copy it. Say it out loud — hearing your own voice say it works differently than reading it.</p>
+
+    <div class="phrase-card" onclick="copyPhrase(this, 0)"><div class="phrase-label">Defusion</div><div class="phrase-text">"I am having the thought that I need to eat more. That is a thought. Not a command."</div><span class="phrase-copied" id="pc0">Copied ✓</span></div>
+    <div class="phrase-card" onclick="copyPhrase(this, 1)"><div class="phrase-label">Pattern recognition</div><div class="phrase-text">"There's the second wave. I know this one. My brain does this. It is not who I am."</div><span class="phrase-copied" id="pc1">Copied ✓</span></div>
+    <div class="phrase-card" onclick="copyPhrase(this, 2)"><div class="phrase-label">Self-compassion</div><div class="phrase-text">"I am doing something hard. I am allowed to stop. I am allowed to be kind to myself right now."</div><span class="phrase-copied" id="pc2">Copied ✓</span></div>
+    <div class="phrase-card" onclick="copyPhrase(this, 3)"><div class="phrase-label">Urge surfing</div><div class="phrase-text">"This feeling is present. It will peak and it will pass. I don't have to do anything except wait."</div><span class="phrase-copied" id="pc3">Copied ✓</span></div>
+    <div class="phrase-card" onclick="copyPhrase(this, 4)"><div class="phrase-label">After a slip</div><div class="phrase-text">"That happened. It is over. This moment is new. What I do now is what matters."</div><span class="phrase-copied" id="pc4">Copied ✓</span></div>
+    <div class="phrase-card" onclick="copyPhrase(this, 5)"><div class="phrase-label">No purging</div><div class="phrase-text">"I have been free from purging for four years. One hard evening does not change that."</div><span class="phrase-copied" id="pc5">Copied ✓</span></div>
+
+    <!-- What am I feeling -->
+    <div class="section-strip"><span>What am I actually feeling right now?</span></div>
+    <p style="font-size:13px; color:#4A4740; line-height:1.6; margin-bottom:12px;">The urge is often a messenger. Tap what's closest to what's actually there — not what you think you should feel.</p>
+
+    <div class="feeling-grid">
+      <button class="feeling-btn" onclick="showFeeling(this, 'lonely')">Lonely or disconnected</button>
+      <button class="feeling-btn" onclick="showFeeling(this, 'stressed')">Stressed or overwhelmed</button>
+      <button class="feeling-btn" onclick="showFeeling(this, 'bored')">Restless or bored</button>
+      <button class="feeling-btn" onclick="showFeeling(this, 'guilt')">Guilty about eating</button>
+      <button class="feeling-btn" onclick="showFeeling(this, 'low')">Low or empty</button>
+      <button class="feeling-btn" onclick="showFeeling(this, 'numb')">Numb or on autopilot</button>
+    </div>
+    <div class="feeling-response" id="feeling-response">
+      <div class="feeling-response-title" id="feeling-title"></div>
+      <div class="feeling-response-body" id="feeling-body"></div>
+    </div>
+
+    <!-- Who do I want to be -->
+    <div class="section-strip"><span>Who do I want to be?</span></div>
+    <p style="font-size:13px; color:#4A4740; line-height:1.6; margin-bottom:12px;">Not a rule. Not a standard to fail. A direction. This is the person you are moving towards — and she is already partly you.</p>
+
+    <div class="identity-block">
+      <div class="identity-q">When I think about the person<br>I want to <em>be</em> —</div>
+
+      <div class="identity-trait">
+        <div class="identity-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+        <div class="identity-content">
+          <div class="identity-title">She is kind to herself</div>
+          <div class="identity-desc">She doesn't punish herself for being human. She responds to a hard evening the way she'd respond to a friend — with gentleness, not shame.</div>
+        </div>
+      </div>
+
+      <div class="identity-trait">
+        <div class="identity-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="identity-content">
+          <div class="identity-title">She is present in her evenings</div>
+          <div class="identity-desc">Her evenings belong to her — not to the kitchen, not to the scroll, not to a pattern she didn't choose. She fills them with things that actually feel like living.</div>
+        </div>
+      </div>
+
+      <div class="identity-trait">
+        <div class="identity-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="identity-content">
+          <div class="identity-title">She reaches for people, not food</div>
+          <div class="identity-desc">When she's lonely, stressed, or low — she calls someone. She's already shown this works. That version of her exists. She's been her before.</div>
+        </div>
+      </div>
+
+      <div class="identity-trait">
+        <div class="identity-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div class="identity-content">
+          <div class="identity-title">She is not defined by the hard nights</div>
+          <div class="identity-desc">A hard night is one data point. It doesn't make her someone who can't do this. She knows the pattern, she has the tools, and she keeps going regardless.</div>
+        </div>
+      </div>
+
+      <div class="identity-trait">
+        <div class="identity-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="identity-content">
+          <div class="identity-title">She is free from the cycle</div>
+          <div class="identity-desc">She has already been this person — for a whole relationship's worth of time, she was free. That wasn't luck. That was her. She can be her again.</div>
+        </div>
+      </div>
+
+      <!-- The contrast -->
+      <div class="identity-contrast">
+        <p style="font-size:10px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:#3A3830; margin-bottom:10px;">Right now vs who I'm becoming</p>
+        <div class="ic-row"><span class="ic-from">Autopilot eating</span><span class="ic-arrow">→</span><span class="ic-to">Noticing and choosing</span></div>
+        <hr class="ic-divider">
+        <div class="ic-row"><span class="ic-from">Guilt and replay</span><span class="ic-arrow">→</span><span class="ic-to">Acknowledged and released</span></div>
+        <hr class="ic-divider">
+        <div class="ic-row"><span class="ic-from">Alone with the noise</span><span class="ic-arrow">→</span><span class="ic-to">Reaching out</span></div>
+        <hr class="ic-divider">
+        <div class="ic-row"><span class="ic-from">Defined by hard nights</span><span class="ic-arrow">→</span><span class="ic-to">Defined by what comes next</span></div>
+      </div>
+    </div>
+
+    <!-- Values -->
+    <div class="section-strip"><span>What matters to me</span></div>
+    <p style="font-size:13px; color:#4A4740; line-height:1.6; margin-bottom:12px;">Tap the ones that feel true right now. These are what you're moving towards.</p>
+
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want to feel at home in my body</div></div>
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want to treat myself with the kindness I'd give someone I love</div></div>
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want food to be neutral — not the thing my evenings revolve around</div></div>
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want to feel in control of my choices, not run by a switch I didn't flip</div></div>
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want connection to fill my evenings, not food</div></div>
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want to stop carrying this alone</div></div>
+    <div class="value-item" onclick="toggleValue(this)"><div class="value-check">✓</div><div class="value-text">I want to prove to myself I can do this — I've done it before</div></div>
+
+    <div class="values-anchor">
+      <p><em>"If I act on this urge right now — is that the person I want to be? And if I don't — what does that make possible?"</em></p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let senseCount = 0, truthIndex = 0, breathRunning = false, breathInterval = null;
+let timerRunning = false, timerInterval = null, timerSecs = 1200;
+const truthIds = ['t1','t2','t3','t4','t5','t6','t7'];
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('iword').classList.add('show');
+    document.getElementById('isub').classList.add('show');
+    document.getElementById('itap').classList.add('show');
+  }, 100);
+});
+
+function goTo(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s' + n).classList.add('active');
+  const early = n < 5;
+  document.getElementById('pdots').classList.toggle('hidden', !early);
+  if (early) document.querySelectorAll('.pdot').forEach((d,i) => d.classList.toggle('active', i === n));
+  document.getElementById('bnav').classList.toggle('hidden', early);
+  if (!early) updateNav(n);
+  if (n === 1) bootS1();
+  if (n === 2) bootS2();
+  if (n === 3) bootS3();
+  if (n === 4) bootS4();
+  if (n === 5) bootPage('ph5','pw5');
+  if (n === 6) bootPage('ph6','pw6');
+  if (n === 7) bootPage('ph7','pw7');
+}
+
+function switchTab(n) { goTo(n); }
+
+function updateNav(n) {
+  ['bn-act','bn-dist','bn-kit'].forEach((id,i) => document.getElementById(id).classList.toggle('active', i+5 === n));
+}
+
+function bootS1() {
+  const gq = document.getElementById('gq');
+  const sg = document.getElementById('sgrid');
+  const gc = document.getElementById('gcta');
+  [gq, sg, gc].forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; });
+  setTimeout(() => { gq.style.opacity = '1'; gq.style.transform = 'translateY(0)'; gq.style.transition = 'opacity 0.5s, transform 0.5s'; }, 100);
+  setTimeout(() => { sg.style.opacity = '1'; sg.style.transform = 'translateY(0)'; sg.style.transition = 'opacity 0.5s, transform 0.5s'; }, 300);
+  setTimeout(() => { gc.style.opacity = '1'; gc.style.transform = 'translateY(0)'; gc.style.transition = 'opacity 0.5s, transform 0.5s'; }, 500);
+}
+function senseDone(btn) {
+  btn.classList.add('done');
+  senseCount++;
+  if (senseCount >= 3) document.getElementById('gnext').classList.add('visible');
+}
+
+function bootS2() {
+  const tl = document.getElementById('tlines');
+  tl.classList.remove('show'); void tl.offsetWidth; setTimeout(() => tl.classList.add('show'), 50);
+  truthIndex = 0;
+  truthIds.forEach(id => document.getElementById(id).classList.remove('lit'));
+  setTimeout(lightNext, 300);
+}
+function lightNext() {
+  if (truthIndex < truthIds.length) {
+    document.getElementById(truthIds[truthIndex]).classList.add('lit');
+    truthIndex++;
+    setTimeout(lightNext, 600);
+  }
+}
+function nextTruth() { if (truthIndex >= truthIds.length) goTo(3); }
+
+function bootS3() {
+  const dp = document.getElementById('dprompt');
+  const dc = document.getElementById('dcards');
+  dp.style.opacity = '0'; dc.style.opacity = '0';
+  setTimeout(() => { dp.style.opacity = '1'; dp.style.transition = 'opacity 0.5s'; }, 100);
+  setTimeout(() => { dc.style.opacity = '1'; dc.style.transition = 'opacity 0.5s'; }, 400);
+}
+function usePhrase(card) {
+  document.querySelectorAll('.dcard').forEach(c => c.classList.remove('used'));
+  card.classList.add('used');
+  setTimeout(() => goTo(4), 1200);
+}
+
+function bootS4() {
+  const bt = document.getElementById('btitle');
+  const bc = document.getElementById('bcircle');
+  const bn = document.getElementById('bnote');
+  bt.classList.remove('show'); bc.classList.remove('show'); bn.classList.remove('show');
+  setTimeout(() => bt.classList.add('show'), 100);
+  setTimeout(() => { bc.classList.add('show'); bn.classList.add('show'); startBreath(); }, 400);
+}
+function startBreath() {
+  if (breathRunning) return;
+  breathRunning = true;
+  const circ = document.getElementById('bprog');
+  const circumference = 2 * Math.PI * 88;
+  const word = document.getElementById('bword');
+  const count = document.getElementById('bcount');
+  let phase = 0, phaseTime = 0, totalCycles = 0;
+  const phases = [
+    { name: 'In', duration: 4, color: '#8B7355' },
+    { name: 'Hold', duration: 2, color: '#6B8F71' },
+    { name: 'Out', duration: 6, color: '#5A6B9E' }
+  ];
+  function tick() {
+    const p = phases[phase];
+    circ.style.strokeDasharray = `${(phaseTime/p.duration)*circumference} ${circumference}`;
+    circ.style.stroke = p.color;
+    word.textContent = p.name;
+    count.textContent = Math.ceil(p.duration - phaseTime);
+    phaseTime += 0.05;
+    if (phaseTime >= p.duration) {
+      phaseTime = 0; phase = (phase+1)%3;
+      if (phase === 0 && ++totalCycles >= 3) {
+        clearInterval(breathInterval); breathRunning = false;
+        word.textContent = 'Done'; count.textContent = '';
+        circ.style.strokeDasharray = `${circumference} ${circumference}`;
+        setTimeout(() => switchTab(5), 800);
+      }
+    }
+  }
+  breathInterval = setInterval(tick, 50);
+}
+
+function bootPage(hid, wid) {
+  const h = document.getElementById(hid);
+  const w = document.getElementById(wid);
+  h.classList.remove('show'); w.classList.remove('show');
+  void h.offsetWidth;
+  setTimeout(() => h.classList.add('show'), 100);
+  setTimeout(() => w.classList.add('show'), 300);
+}
+
+function togglePhases() {
+  const btn = document.getElementById('ptoggle');
+  const con = document.getElementById('pcontainer');
+  btn.classList.toggle('open'); con.classList.toggle('open');
+  btn.querySelector('.pt-icon').textContent = btn.classList.contains('open') ? '−' : '+';
+}
+function togglePhase(header) { header.closest('.tool-phase').classList.toggle('open'); }
+
+function toggleMiniTimer() {
+  if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('tm-btn').textContent = 'Resume'; return; }
+  if (timerSecs === 0) { timerSecs = 1200; document.getElementById('tm-display').textContent = '20:00'; }
+  timerRunning = true; document.getElementById('tm-btn').textContent = 'Pause';
+  timerInterval = setInterval(() => {
+    timerSecs--;
+    document.getElementById('tm-display').textContent = String(Math.floor(timerSecs/60)).padStart(2,'0') + ':' + String(timerSecs%60).padStart(2,'0');
+    if (timerSecs <= 0) { clearInterval(timerInterval); timerRunning = false; document.getElementById('tm-display').textContent = 'Done'; document.getElementById('tm-btn').textContent = 'Reset'; }
+  }, 1000);
+}
+
+function toggleDistract(id, card) {
+  const el = document.getElementById(id);
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.distract-expanded').forEach(e => e.classList.remove('open'));
+  document.querySelectorAll('.distract-card').forEach(c => { c.style.borderRadius = '14px'; c.style.borderBottomLeftRadius = '14px'; c.style.borderBottomRightRadius = '14px'; });
+  if (!isOpen) {
+    el.classList.add('open');
+    if (card) { card.style.borderBottomLeftRadius = '0'; card.style.borderBottomRightRadius = '0'; }
+  }
+}
+
+let phraseTimers = {};
+function copyPhrase(card, idx) {
+  const text = card.querySelector('.phrase-text').textContent.replace(/^"|"$/g,'').trim();
+  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
+  const copied = document.getElementById('pc' + idx);
+  if (copied) {
+    copied.classList.add('show');
+    clearTimeout(phraseTimers[idx]);
+    phraseTimers[idx] = setTimeout(() => copied.classList.remove('show'), 2000);
+  }
+}
+
+const feelingData = {
+  lonely: { title: 'Lonely or disconnected', body: 'The urge to eat when you\'re lonely is your nervous system reaching for something to fill a gap that food can\'t fill. It\'s not weakness — it\'s what happens when what you actually need isn\'t available right now. <em>Connection is what your nervous system is asking for. Food is the substitute it\'s learned to reach for instead.</em> Can you reach out to one person — even a text?'  },
+  stressed: { title: 'Stressed or overwhelmed', body: 'Stress eating works in the short term — food activates the reward system and briefly reduces cortisol. That\'s why the brain keeps going back to it. <em>The urge makes complete sense. It just doesn\'t solve the stress, and it adds the guilt on top.</em> What would actually help the stress, even slightly, right now?' },
+  bored: { title: 'Restless or bored', body: 'Boredom and the urge to eat are closely linked — your brain seeks stimulation, and food is one of the fastest routes to it. <em>This is not hunger. It\'s understimulation.</em> Your brain needs something absorbing — music, movement, a call. Something that gives it something else to lock onto.' },
+  guilt: { title: 'Guilty about eating', body: 'The guilt-binge loop: eat something "off plan", feel guilty, feel like it\'s all ruined, eat more. <em>The "I\'ve already ruined it" thought is not true — it\'s a pattern your brain has practised, not a fact about reality.</em> This moment is not ruined. The next choice is available to you right now, and it always will be.' },
+  low: { title: 'Low or empty', body: 'Feeling low and reaching for food are deeply connected — food provides temporary dopamine when nothing else feels like it will. <em>The emptiness is real. Food will fill it briefly and leave it slightly larger.</em> What has helped even slightly when you\'ve felt like this before? That\'s what tonight needs.' },
+  numb: { title: 'Numb or on autopilot', body: 'Dissociation and bingeing often go together — the binge can be an attempt to feel something, or to come back into your body. <em>You\'ve noticed it. That\'s already the first interruption.</em> Cold water on your wrists, both feet on the floor, one slow breath. Come back into the room. You\'re here.' }
+};
+function showFeeling(btn, key) {
+  document.querySelectorAll('.feeling-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const data = feelingData[key];
+  document.getElementById('feeling-title').textContent = data.title;
+  document.getElementById('feeling-body').innerHTML = data.body;
+  const resp = document.getElementById('feeling-response');
+  resp.classList.remove('show'); void resp.offsetWidth; resp.classList.add('show');
+}
+
+function toggleValue(item) { item.classList.toggle('selected'); }
+</script>
+</body>
+</html>
